@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
+#include <vector>
 using std::cin;
 
 //Assume alphabet of ASCII chars
@@ -11,7 +12,7 @@ static int LOOKAHEAD_BUFFER_LENGTH = 30;
 typedef struct {
 	int is_match;
 	int position;
-	int length;
+	char length;
 } Lz_match;
 
 typedef struct {
@@ -98,6 +99,8 @@ int main(int argc, char **argv) {
 	char dictionary[WINDOW_LENGTH];
 	char buffer[LOOKAHEAD_BUFFER_LENGTH];
 	int buffer_length = LOOKAHEAD_BUFFER_LENGTH;
+	std::vector<char> data;
+
 	Lz_match current_match;
 	Advance_data advance_data = {0,0,0,LOOKAHEAD_BUFFER_LENGTH};
 
@@ -114,18 +117,45 @@ int main(int argc, char **argv) {
 		//printf("\n----------------------------\n");
 		current_match = get_longest_match(dictionary, advance_data.dictionary_head, advance_data.dictionary_length, buffer, advance_data.buffer_head, advance_data.buffer_length);
 		if (current_match.is_match) {
-			printf("(1,%i,%i): ", current_match.position, current_match.length);
+			/*printf("(1,%i,%i): ", current_match.position, current_match.length);
 			int j;
 			for (j=0; j<current_match.length; j++) {
 				printf("%c", buffer[positive_mod((advance_data.buffer_head + j), LOOKAHEAD_BUFFER_LENGTH)]);
 			}
-			printf("\n");
+			printf("\n");*/
 			steps = current_match.length;
+
+			char temp1 = (char) ((current_match.position & 0x00000ff0) >> 4);
+			char temp2 = (char) ((current_match.position & 0x0000000f) << 4) + (current_match.length & 0x0f);
+
+			data.push_back(1);
+			data.push_back(temp1);
+			data.push_back(temp2);
+			//printf("Position = %#06x; Length = %#06x; chars are %#04x and (%#03x + %#03x) => %#04x\n", current_match.position, current_match.length, temp1, ((current_match.position & 0x0000000f) << 4), (current_match.length & 0x0f), temp2);
+			//printf("data: 1 - %#06x\n", temp);
+
 		} else {
-			printf("(0,%c)\n", buffer[advance_data.buffer_head]);
+			//printf("(0,%c)\n", buffer[advance_data.buffer_head]);
 			steps = 1;
+			data.push_back(0);
+			data.push_back(buffer[advance_data.buffer_head]);
+			//printf("data: 0 - %#06x", buffer[advance_data.buffer_head]);
 		}
 		advance_data = advance(dictionary, advance_data.dictionary_head, advance_data.dictionary_length, buffer, advance_data.buffer_head, advance_data.buffer_length, steps);
 	}
+	/*
+	printf("data: ");
+	for (i=0; i<data.size(); i++) {
+		printf("-%i-", data.at(i));
+	}
+	printf("\n");
+*/
+	char* p = data.data();
+	for (i=0; i<data.size(); i++) {
+		putchar(*p);
+		p++;
+	}
+	printf("\n");
+
 	return 0;
 }
