@@ -2,12 +2,15 @@
 #include <string.h>
 #include <iostream>
 #include <vector>
+#include <CircBuffer.h>
 using std::cin;
 
 //Assume alphabet of ASCII chars
 
 static int WINDOW_LENGTH = 150;
 static int LOOKAHEAD_BUFFER_LENGTH = 30;
+CircBuffer dict_circ_buffer(WINDOW_LENGTH);
+CircBuffer lookahead_circ_buffer(LOOKAHEAD_BUFFER_LENGTH);
 
 typedef struct {
 	int is_match;
@@ -51,7 +54,7 @@ Lz_match get_longest_match(char* dictionary, int dict_start_pos, int dict_length
 			is_match = 1;
 			int local_match_length = 1;
 			//printf("   now comparing %c to %c\n", dictionary[(i+local_match_length) % dict_length], lookahead_buffer[(local_match_length + buffer_start_pos) % LOOKAHEAD_BUFFER_LENGTH]);
-			while (local_match_length < buffer_length && dictionary[(i+local_match_length) % dict_length] == lookahead_buffer[(local_match_length + buffer_start_pos) % LOOKAHEAD_BUFFER_LENGTH]) {
+			while (local_match_length <= buffer_length && dictionary[(i+local_match_length) % dict_length] == lookahead_buffer[(local_match_length + buffer_start_pos) % LOOKAHEAD_BUFFER_LENGTH]) {
 				local_match_length++;
 				//printf("i = %i, local_match_length = %i, dict_length = %i\n", i, local_match_length, dict_length);
 				//printf("   now comparing %c to %c\n", dictionary[(i+local_match_length) % dict_length], lookahead_buffer[(local_match_length + buffer_start_pos) % LOOKAHEAD_BUFFER_LENGTH]);
