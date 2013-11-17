@@ -34,7 +34,7 @@ Lz_match get_longest_match(char* dictionary, int dict_start_pos, int dict_length
 	}
 
 	int is_match = 0;
-	int longest_match_pos = -1;
+	int longest_match_pos = 0;
 	int longest_match_length = 0;
 	int i;
 
@@ -138,8 +138,14 @@ int main(int argc, char **argv) {
 			//printf("(0,%c)\n", buffer[advance_data.buffer_head]);
 			steps = 1;
 			data.push_back(0);
-			data.push_back(buffer[advance_data.buffer_head]);
-			//printf("data: 0 - %#06x", buffer[advance_data.buffer_head]);
+			data.push_back(buffer[advance_data.buffer_head % buffer_length]);
+			/*printf("Printing nonterminal: %c\n", buffer[advance_data.buffer_head % buffer_length]);
+			printf("    Buffer = [");
+			int k;
+			for(k=advance_data.buffer_head; k<advance_data.buffer_head + buffer_length; k++) {
+				printf("%c", buffer[k % buffer_length]);
+			}
+			printf("]\n");*/
 		}
 		advance_data = advance(dictionary, advance_data.dictionary_head, advance_data.dictionary_length, buffer, advance_data.buffer_head, advance_data.buffer_length, steps);
 	}
