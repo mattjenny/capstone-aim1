@@ -44,15 +44,6 @@ Lz_match get_longest_match() {
 	int local_match_length = 0;
 	int i;
 
-		/*	if (dict_circ_buffer.size() < WINDOW_LENGTH) {
-		printf("Dictionary = [");
-		int j;
-		for (j=0; j<dict_circ_buffer.size(); j++) {
-			printf("%c", dict_circ_buffer.get(j));
-		}
-		printf("\nComparing %c and %c\n", dict_circ_buffer.get(i + local_match_length), lookahead_circ_buffer.get(local_match_length));
-		}*/
-
 	for (i=0; i<dict_circ_buffer.size(); i++) {
 		local_match_length = 0;
 		while (local_match_length <= lookahead_circ_buffer.size() && local_match_length < LONGEST_MATCH && dict_circ_buffer.get(i + local_match_length) == lookahead_circ_buffer.get(local_match_length)) { //kind of hacky; circ buff handles the modulus
@@ -105,7 +96,7 @@ int main(int argc, char **argv) {
 	while (!lookahead_circ_buffer.is_empty()) {
 
 		current_match = get_longest_match();
-		if (current_match.is_match) {
+		if (current_match.is_match && current_match.length > 1) {
 			if (verbose) {
 				printf("(1,%i,%i): ", current_match.position, current_match.length);
 				int j;
