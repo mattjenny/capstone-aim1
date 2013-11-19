@@ -35,7 +35,7 @@ char CircBuffer::pop() {
 char CircBuffer::get(int index) {
 	if(is_full_capacity()) return data[(buffer_head + index) % max_capacity];
 	else {
-		return data[(buffer_tail + (index % buffer_size) % max_capacity)];
+		return data[(buffer_tail + (index % buffer_size)) % max_capacity];
 	}
 }
 
