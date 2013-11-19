@@ -2,11 +2,14 @@ class CircBuffer {
 public:
 	CircBuffer(int capacity);
 	int size();
-	int is_full_capacity();
+	bool is_empty();
+	bool is_full_capacity();
 	char peek();
 	char pop();
 	char get(int index);
+	void get(int index, char* buffer, char length);
 	void put(char c);
+	void put(char* buffer, char length);
 
 private:
 	void increment_buffer_head();

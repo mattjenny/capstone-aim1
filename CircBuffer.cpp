@@ -1,17 +1,22 @@
 #include <CircBuffer.h>
+#include <stdio.h>
 
 CircBuffer::CircBuffer(int capacity) {
 	buffer_size = 0;
 	buffer_head = 0;
 	max_capacity = capacity;
-	data = new char[buffer_size];
+	data = new char[max_capacity];
 }
 
 int CircBuffer::size() {
 	return buffer_size;
 }
 
-int CircBuffer::is_full_capacity() {
+bool CircBuffer::is_empty() {
+	return buffer_size == 0;
+}
+
+bool CircBuffer::is_full_capacity() {
 	return buffer_size == max_capacity;
 }
 
@@ -21,20 +26,35 @@ char CircBuffer::peek() {
 
 char CircBuffer::pop() {
 	char retval = data[buffer_head];
-	buffer_size--;
 	increment_buffer_head();
+	buffer_size--;
 	return retval;
 }
 
 char CircBuffer::get(int index) {
-	int buffer_index = (index + buffer_head) % max_capacity;
+	int buffer_index = (buffer_head + (index % buffer_size)) % max_capacity;
 	return data[buffer_index];
+}
+
+// buffer is a char array of length "length" that will be populated by get()
+void CircBuffer::get(int index, char* buffer, char length) { 
+	int i;
+	for (i=0; i<length; i++) {
+		buffer[i] = get(i + index);
+	}
 }
 
 void CircBuffer::put(char c) {
 	data[buffer_head] = c;
 	increment_buffer_head();
 	if (buffer_size < max_capacity) buffer_size++;
+}
+
+void CircBuffer::put(char* buffer, char length) {
+	int i;
+	for(i=0; i<length; i++) {
+		put(buffer[i]);
+	}
 }
 
 void CircBuffer::increment_buffer_head() {
