@@ -4,6 +4,7 @@
 CircBuffer::CircBuffer(int capacity) {
 	buffer_size = 0;
 	buffer_head = 0;
+	buffer_tail = 0;
 	max_capacity = capacity;
 	data = new char[max_capacity];
 }
@@ -21,19 +22,21 @@ bool CircBuffer::is_full_capacity() {
 }
 
 char CircBuffer::peek() {
-	return data[buffer_head];
+	return data[buffer_tail];
 }
 
 char CircBuffer::pop() {
-	char retval = data[buffer_head];
-	increment_buffer_head();
+	char retval = data[buffer_tail];
+	increment_buffer_tail();
 	buffer_size--;
 	return retval;
 }
 
 char CircBuffer::get(int index) {
-	int buffer_index = (buffer_head + (index % buffer_size)) % max_capacity;
-	return data[buffer_index];
+	if(is_full_capacity()) return data[(buffer_head + index) % max_capacity];
+	else {
+		return data[(buffer_tail + (index % buffer_size) % max_capacity)];
+	}
 }
 
 // buffer is a char array of length "length" that will be populated by get()
@@ -47,6 +50,7 @@ void CircBuffer::get(int index, char* buffer, char length) {
 void CircBuffer::put(char c) {
 	data[buffer_head] = c;
 	increment_buffer_head();
+	if (is_full_capacity()) increment_buffer_tail();
 	if (buffer_size < max_capacity) buffer_size++;
 }
 
@@ -60,4 +64,8 @@ void CircBuffer::put(char* buffer, char length) {
 void CircBuffer::increment_buffer_head() {
 	int index = (buffer_head + 1) % max_capacity;
 	buffer_head = index;
+}
+
+void CircBuffer::increment_buffer_tail() {
+	buffer_tail = (buffer_tail + 1) % max_capacity;
 }

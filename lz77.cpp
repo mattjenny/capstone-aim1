@@ -10,6 +10,7 @@ using namespace std;
 
 static int WINDOW_LENGTH = 150;
 static int LOOKAHEAD_BUFFER_LENGTH = 30;
+static int LONGEST_MATCH = 15;
 CircBuffer dict_circ_buffer(WINDOW_LENGTH);
 CircBuffer lookahead_circ_buffer(LOOKAHEAD_BUFFER_LENGTH);
 
@@ -43,9 +44,18 @@ Lz_match get_longest_match() {
 	int local_match_length = 0;
 	int i;
 
+		/*	if (dict_circ_buffer.size() < WINDOW_LENGTH) {
+		printf("Dictionary = [");
+		int j;
+		for (j=0; j<dict_circ_buffer.size(); j++) {
+			printf("%c", dict_circ_buffer.get(j));
+		}
+		printf("\nComparing %c and %c\n", dict_circ_buffer.get(i + local_match_length), lookahead_circ_buffer.get(local_match_length));
+		}*/
+
 	for (i=0; i<dict_circ_buffer.size(); i++) {
 		local_match_length = 0;
-		while (local_match_length <= lookahead_circ_buffer.size() && dict_circ_buffer.get(i + local_match_length) == lookahead_circ_buffer.get(local_match_length)) { //kind of hacky; circ buff handles the modulus
+		while (local_match_length <= lookahead_circ_buffer.size() && local_match_length < LONGEST_MATCH && dict_circ_buffer.get(i + local_match_length) == lookahead_circ_buffer.get(local_match_length)) { //kind of hacky; circ buff handles the modulus
 			if (is_match == 0) is_match = 1;
 			local_match_length++;
 		}
