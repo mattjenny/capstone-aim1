@@ -66,7 +66,7 @@ Lz_match get_longest_match() {
 }
 
 string getNextString() {
-	if(punctuation.empty()) {
+	/*if(punctuation.empty()) {
 		string s;
 		size_t prev=0, pos;
 		getline(cin,s,delim);
@@ -81,8 +81,10 @@ string getNextString() {
 		}
 	}
 	string retval = punctuation.front();
-	punctuation.pop_front();
-	return retval;
+	punctuation.pop_front();*/
+	string s;
+	getline(cin, s, delim);
+	return s;
 }
 
 void advance(int steps) {
@@ -155,7 +157,6 @@ int main(int argc, char **argv) {
 			for (string::iterator it = s.begin(); it != s.end(); ++it) {
 				data.push_back(*it);
 			}
-			//data.push_back(lookahead_circ_buffer.peek());
 		}
 		advance(steps);
 	}
@@ -166,7 +167,7 @@ int main(int argc, char **argv) {
 		putchar(*p);
 		p++;
 	}
-	printf("\n", data.data());
+	//printf("\n", data.data());
 
 	return 0;
 }
