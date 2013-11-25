@@ -1,7 +1,9 @@
 #include <stdio.h>
-#include <string.h>
+#include <cstring>
+#include <string>
 #include <iostream>
 #include <vector>
+#include <deque>
 #include <CircBuffer.h>
 //using std::cin;
 using namespace std;
@@ -12,6 +14,10 @@ static int WINDOW_LENGTH = 150;
 static int LOOKAHEAD_BUFFER_LENGTH = 15;
 CircBuffer dict_circ_buffer(WINDOW_LENGTH);
 CircBuffer lookahead_circ_buffer(LOOKAHEAD_BUFFER_LENGTH);
+deque<string> punctuation;
+//char punct[11] = ";:,.!?()\"\t\n";
+char punct[11] = {0x09, 0x0a, 0x21, 0x22, 0x28, 0x29, 0x2c, 0x2e, 0x3a, 0x3b, 0x3f};
+char delim = 0x20;
 
 typedef struct {
 	int is_match;
@@ -45,7 +51,7 @@ Lz_match get_longest_match() {
 
 	for (i=0; i<dict_circ_buffer.size(); i++) {
 		local_match_length = 0;
-		while (local_match_length <= lookahead_circ_buffer.size() && dict_circ_buffer.get(i + local_match_length) == lookahead_circ_buffer.get(local_match_length)) { //kind of hacky; circ buff handles the modulus
+		while (local_match_length <= lookahead_circ_buffer.size() && dict_circ_buffer.get(i + local_match_length).compare(lookahead_circ_buffer.get(local_match_length)) == 0) { //kind of hacky; circ buff handles the modulus
 			if (is_match == 0) is_match = 1;
 			local_match_length++;
 		}
@@ -59,13 +65,36 @@ Lz_match get_longest_match() {
 	return best_match;
 }
 
+string getNextString() {
+	if(punctuation.empty()) {
+		string s;
+		size_t prev=0, pos;
+		getline(cin,s,delim);
+		while((pos = s.find_first_of(punct, prev)) != string::npos) {
+			if (pos-prev > 1) 
+				punctuation.push_back(s.substr(prev, pos-prev));
+			punctuation.push_back(s.substr(pos, 1));
+			prev = pos + 1;
+		}
+		if (prev < s.length()) {
+			punctuation.push_back(s.substr(prev, s.length()-prev));
+		}
+	}
+	string retval = punctuation.front();
+	punctuation.pop_front();
+	return retval;
+}
+
 void advance(int steps) {
 	int i;
-	char c;
+	string s;
 	for (i=0; i<steps; i++) {
 		dict_circ_buffer.put(lookahead_circ_buffer.peek());
-		if (lookahead_circ_buffer.is_full_capacity() && cin.get(c)) {
-			lookahead_circ_buffer.put(c);
+		if (!cin.eof() || !punctuation.empty()) {
+			//getline(cin,s,delim);
+			s = getNextString();
+			//printf("GETTING NEXT STRING: %s\n", s.c_str());
+			lookahead_circ_buffer.put(s);
 		} else {
 			lookahead_circ_buffer.pop();
 		}
@@ -85,10 +114,13 @@ int main(int argc, char **argv) {
 	Lz_match current_match;
 
 	//Cheat and assume the input is at least LOOKAHEAD_BUFFER_LENGTH characters long
-	char c;
+	string s;
+	char delim = 0x20;
 	for (i = 0; i<LOOKAHEAD_BUFFER_LENGTH; i++) {
-		cin.get(c);
-		lookahead_circ_buffer.put(c);
+		//getline(cin,s,delim);
+		s = getNextString();
+		//printf("GETTING NEXT STRING: %s\n", s.c_str());
+		lookahead_circ_buffer.put(s);
 	}
 
 	// now that the lookahead buffer is populated, iterate through the rest of the data
@@ -100,7 +132,7 @@ int main(int argc, char **argv) {
 				printf("(1,%i,%i): ", current_match.position, current_match.length);
 				int j;
 				for (j=0; j<current_match.length; j++) {
-					printf("%c", lookahead_circ_buffer.get(j));
+					printf("%s-", lookahead_circ_buffer.get(j).c_str());
 				}
 				printf("\n");
 			}
@@ -109,17 +141,21 @@ int main(int argc, char **argv) {
 			char temp1 = (char) ((current_match.position & 0x00000ff0) >> 4);
 			char temp2 = (char) ((current_match.position & 0x0000000f) << 4) + (current_match.length & 0x0f);
 
-			data.push_back(1);
+			data.push_back(0x23);
 			data.push_back(temp1);
 			data.push_back(temp2);
 
 		} else {
 			if (verbose) {
-				printf("(0,%c)\n", lookahead_circ_buffer.peek());
+				printf("(0,%s)\n", lookahead_circ_buffer.peek().c_str());
 			}
 			steps = 1;
-			data.push_back(0);
-			data.push_back(lookahead_circ_buffer.peek());
+			data.push_back(0x24);
+			string s = lookahead_circ_buffer.peek();
+			for (string::iterator it = s.begin(); it != s.end(); ++it) {
+				data.push_back(*it);
+			}
+			//data.push_back(lookahead_circ_buffer.peek());
 		}
 		advance(steps);
 	}
