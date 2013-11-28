@@ -18,6 +18,7 @@ deque<string> punctuation;
 //char punct[11] = ";:,.!?()\"\t\n";
 char punct[11] = {0x09, 0x0a, 0x21, 0x22, 0x28, 0x29, 0x2c, 0x2e, 0x3a, 0x3b, 0x3f};
 char delim = 0x20;
+bool verbose = false;
 
 typedef struct {
 	int is_match;
@@ -103,15 +104,10 @@ void advance(int steps) {
 	}
 }
 
-int main(int argc, char **argv) {
-
+void compress() {
 	int i;
 	int steps;
 	vector<char> data;
-	bool verbose = false;
-	if (argc > 1 && strcmp("-v", argv[1]) == 0) {
-		verbose = true;
-	}
 
 	Lz_match current_match;
 
@@ -168,6 +164,13 @@ int main(int argc, char **argv) {
 		p++;
 	}
 	//printf("\n", data.data());
+}
 
+int main(int argc, char **argv) {
+	
+	if (argc > 1 && strcmp("-v", argv[1]) == 0) {
+		verbose = true;
+	}
+	compress();
 	return 0;
 }

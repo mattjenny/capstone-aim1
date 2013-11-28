@@ -41,12 +41,8 @@ void process_nonterminal(int offset, char length) {
 	delete [] decoded_str;
 }
 
-int main(int argc, char** argv) {
-	if (argc > 1 && strcmp("-v", argv[1]) == 0) {
-		verbose = true;
-	}
-
-	string line;
+void decompress() {
+		string line;
 	char current_delimiter;
 	while (getline(cin, line)) {
 		current_delimiter = line.at(0);
@@ -71,41 +67,18 @@ int main(int argc, char** argv) {
 			prev = pos+1;
 		}
 	}
-	/*
-	while(cin.get(c)) {
-		// Test for terminal sequence
-		if (c == 0) {
-			// Next char contains the ASCII representation of the terminal
-			if (std::cin.get(c1)) {
-				process_terminal(c1);
-			} else {
-				printf("ERROR\n");
-			}
-		// Test for nonterminal sequence
-		} else if (c == 1) {
-			//Next two chars contain offset (12 bits) and length (4 bits) of the match
-			if (std::cin.get(c1) && std::cin.get(c2)) {
-				int offset = ((c1 & 0x000000ff) << 4) + ((c2 & 0x000000f0) >> 4);
-				char length = (c2 & 0x0f);
-				process_nonterminal(offset, length);
-			} else {
-				printf("ERROR\n");
-			}
-		// End-of-file or other
-		} else {}
-	}
-	*/
 
-	// Print the decompressed data to stdout
-	//printf("%s\n", data.data());
-	/*for (vector<string>::iterator it = data.begin(); it != data.end(); ++it) {
-		printf("%s", *it.c_str());
-	}*/
 	int i;
 	for (i=0; i<data.size(); i++) {
 		printf("%s ", data.at(i).c_str());
 	}
 	printf("\n");
+}
 
+int main(int argc, char** argv) {
+	if (argc > 1 && strcmp("-v", argv[1]) == 0) {
+		verbose = true;
+	}
+	decompress();
 	return 0;
 }
