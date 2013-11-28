@@ -10,6 +10,7 @@ unsigned int node_count = 0;
 int match_length = 0;
 static int MAX_MATCH_LENGTH = 255;
 char delim = 0x20;
+bool verbose = false;
 
 typedef struct {
 	unsigned int prefix_index;
@@ -64,14 +65,8 @@ Lz_pair get_next_pair(Dictionary_Node* root) {
 	}
 }
 
-int main(int argc, char **argv) {
-
+void compress() {
 	vector<Lz_pair> data;
-	bool verbose = false;
-	if (argc > 1 && strcmp("-v", argv[1]) == 0) {
-		verbose = true;
-	}
-
 	Dictionary_Node* root = new Dictionary_Node(node_count++, "");
 	Lz_pair current_pair;
 	while (!cin.eof()) {
@@ -91,6 +86,13 @@ int main(int argc, char **argv) {
 		putchar(length);
 		printf("%s", it->literal.c_str());
 	}
+}
 
+int main(int argc, char **argv) {
+
+	if (argc > 1 && strcmp("-v", argv[1]) == 0) {
+		verbose = true;
+	}
+	compress();
 	return 0;
 }
