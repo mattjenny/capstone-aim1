@@ -42,30 +42,29 @@ void process_nonterminal(int offset, char length) {
 }
 
 void decompress() {
-		string line;
+	string line;
 	char current_delimiter;
-	while (getline(cin, line)) {
-		current_delimiter = line.at(0);
-		size_t prev = 1, pos;
-		while(prev < line.length()) {
-			if (current_delimiter == TERMINAL_DELIMITER) {
-				pos = line.find_first_of(delim, prev);
-				if (pos == string::npos) {
-					pos = line.length()-1;
-					process_terminal(line.substr(prev, line.length()-prev));
-				}
-				//printf("Processing terminal %s\n", line.substr(prev, pos-prev).c_str());
-				else
-					process_terminal(line.substr(prev, pos-prev));
-			} else if (current_delimiter == NONTERMINAL_DELIMITER) {
-				int offset = ((line.at(prev) & 0x000000ff) << 4) + ((line.at(prev+1) & 0x000000f0) >> 4);
-				char length = (line.at(prev+1) & 0x0f);
-				pos = prev+2;
-				process_nonterminal(offset, length);
+	istreambuf_iterator<char> eos;
+	line = string(istreambuf_iterator<char> (cin), eos);
+	current_delimiter = line.at(0);
+	size_t prev = 1, pos;
+	while(prev < line.length()) {
+		if (current_delimiter == TERMINAL_DELIMITER) {
+			pos = line.find_first_of(delim, prev);
+			if (pos == string::npos) {
+				pos = line.length()-1;
+				process_terminal(line.substr(prev, line.length()-prev));
 			}
-			current_delimiter = line.at(pos);
-			prev = pos+1;
+			else
+				process_terminal(line.substr(prev, pos-prev));
+		} else if (current_delimiter == NONTERMINAL_DELIMITER) {
+			int offset = ((line.at(prev) & 0x000000ff) << 4) + ((line.at(prev+1) & 0x000000f0) >> 4);
+			char length = (line.at(prev+1) & 0x0f);
+			pos = prev+2;
+			process_nonterminal(offset, length);
 		}
+		current_delimiter = line.at(pos);
+		prev = pos+1;
 	}
 
 	int i;
