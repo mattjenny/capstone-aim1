@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
   char g;
   while((g = fgetc(fp)) != EOF)
     {
-      if(g != '\n' && g != '\t' && g != '\r')
+      if(g != '\t' && g != '\r')
 	{
 	  int test = check(g, ch);
 	  if(test != -1)
@@ -149,29 +149,30 @@ int main(int argc, char *argv[])
   int bits = 0;
   while(ch[k] != '*')
     {
-      cout << ch[k] << " " << huff[k] << endl;
+      cout << ch[k] << " " << huff[k] << "\t";
       frequency += freq[k];
       bits += freq[k]*huff[k].length();
       k++;
     }
-  cout << "----------------------------------------" << endl;
+  cout << "--\t";
   rewind(fp);
   while((g = fgetc(fp)) != EOF)
     {
-      if(g != '\n' && g != '\t' && g != '\r')      
+      if(g != '\t' && g != '\r')      
 	cout << huff[check(g, ch)] << " ";
     }
-
+  
   float ratio = (float)frequency*8/(float)bits;
   float hratio = (float)bits/(float)frequency;
 
-  cout << "\n----------------------------------------" << endl;
+  cout << "\t--" << endl;
+  /*
   cout << "There are a total of " << frequency << " symbols that are encoded." << endl;
   cout << "There are " << k << " distinct symbols used." << endl;
   cout << "There were " << frequency*8 << " bits in the original file." << endl;
   cout << "There were " << bits << " bits in the compressed file." << endl;
   cout << "This gives a compression ratio of " << ratio  << "." << endl;
   cout << "The cost of the Huffman tree is " << hratio << " bits per character." << endl;
-
+  */
   fclose(fp);
 }

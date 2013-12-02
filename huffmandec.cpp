@@ -88,15 +88,15 @@ int main (int argc, char **argv) {
   char buffer[256];
   while ( true ) {
     char first = file.get();
-    if ( (first == '\n') || (first == '\r') )
+    if ( (first == '\t') || (first == '\r') )
       continue;
     char second = file.get();
     if ( (first == '-') && (second == '-') ) {
-      file.getline(buffer, 255, '\n');
+      file.getline(buffer, 255, '\t');
       break;
     }
     // read in the prefix code
-    file.getline(buffer, 255, '\n');
+    file.getline(buffer, 255, '\t');
     buildTree(first, buffer, root);
   }
 
