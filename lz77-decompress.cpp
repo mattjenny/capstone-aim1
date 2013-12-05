@@ -7,7 +7,7 @@
 
 using namespace std;
 
-static int WINDOW_LENGTH = 255;
+static int WINDOW_LENGTH = 2047;
 static int LOOKAHEAD_BUFFER_LENGTH = 15;
 static char TERMINAL_DELIMITER = 0x24;
 static char NONTERMINAL_DELIMITER = 0x23;

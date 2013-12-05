@@ -10,7 +10,7 @@ using namespace std;
 
 //Assume alphabet of ASCII chars
 
-static int WINDOW_LENGTH = 255;
+static int WINDOW_LENGTH = 2047;
 static int LOOKAHEAD_BUFFER_LENGTH = 15;
 CircBuffer dict_circ_buffer(WINDOW_LENGTH);
 CircBuffer lookahead_circ_buffer(LOOKAHEAD_BUFFER_LENGTH);
