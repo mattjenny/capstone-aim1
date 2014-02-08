@@ -45,7 +45,11 @@ bool compare_ignore_case(string first, string second) {
 void process_terminal(string terminal) {
 	if (verbose) printf("(0,%s):  %s\n", terminal.c_str(), terminal.c_str());
 	dict.put(terminal);
-	counts.at(terminal)++;
+	if (counts.count(terminal) == 0) {
+		counts.insert(make_pair<string, unsigned int>(terminal, 0));
+	} else {
+		counts.at(terminal)++;
+	}
 }
 
 /*
@@ -71,42 +75,15 @@ void process_nonterminal(int offset, char length) {
 * Main sorting routine
 */
 void lz77_sort() {
-	unordered_set<string> lit_set; // Set of all unique words
+	//unordered_set<string> lit_set; // Set of all unique words
 	string line; // String into which we'll read all of cin.  I'm sure there's a better way to do this
 	char current_delimiter;
 	istreambuf_iterator<char> eos;
 	line = string(istreambuf_iterator<char> (cin), eos);
 
-	//Find all unique literals
-	current_delimiter = line.at(0); // Start at the beginning
-	size_t prev = 1, pos; // Scan forward from prev to find next delimiter symbol
-	while(prev < line.length()) {
-		if (current_delimiter == TERMINAL_DELIMITER) {
-			pos = line.find_first_of(delim, prev);
-			if (pos == string::npos) { //Check if this reaches the end of the string
-				pos = line.length()-1;
-				lit_set.insert(line.substr(prev, line.length()-prev)); // Insert this literal into the set
-			}
-			else
-				lit_set.insert(line.substr(prev, pos-prev)); // Insert this literal into the set
-		} else {
-			pos = prev+2;
-		}
-		current_delimiter = line.at(pos);
-		prev = pos+1;
-	}
-
-	// Now, copy the elements of the set to a list
-	for (unordered_set<string>::iterator it = lit_set.begin(); it != lit_set.end(); ++it) {
-		lit.push_back(*it);
-		counts.insert(make_pair<string, unsigned int>(*it, 0));
-	}
-	// And sort the list
-	lit.sort(compare_ignore_case);
-
-	//Tally the numbers of each literal
+	//Find and tally unique literals
 	current_delimiter = line.at(0);
-	prev = 1, pos = 0;
+	size_t prev = 1, pos = 0;
 	while(prev < line.length()) {
 		if (current_delimiter == TERMINAL_DELIMITER) {
 			pos = line.find_first_of(delim, prev);
@@ -126,10 +103,19 @@ void lz77_sort() {
 		prev = pos+1;
 	}
 
+	// Now, copy the elements of the set to a list
+	for (unordered_map<string, unsigned int>::iterator it = counts.begin(); it != counts.end(); ++it) {
+		lit.push_back(it->first);
+	}
+	// And sort the list
+	lit.sort(compare_ignore_case);
+
 	// Print results
 	printf("\nRESULTS:\n");
+	int k;
 	for(list<string>::iterator lit_it = lit.begin(); lit_it != lit.end(); ++lit_it) {
-		printf("(%s,%u) ",(*lit_it).c_str(),counts.at(*lit_it));
+		printf("(%s,%u) \n",(*lit_it).c_str(),counts.at(*lit_it));
+		string charbytes = *lit_it;
 	}
 	printf("\n");
 }

@@ -19,16 +19,18 @@ using namespace std;
 
 // Buffer lengths
 static int WINDOW_LENGTH = 4095;
-static int LOOKAHEAD_BUFFER_LENGTH = 15;
+static int LOOKAHEAD_BUFFER_LENGTH = 30;
 
 //Circular buffers
 CircBuffer dict_circ_buffer(WINDOW_LENGTH); //Stores 4095 most recently read words
 CircBuffer lookahead_circ_buffer(LOOKAHEAD_BUFFER_LENGTH); //Reads ahead 15 words
 
 deque<string> punctuation;
+CircBuffer wordqueue(20);
 
 // Split on spaces
 char delim = 0x20;
+char STRING_TOKEN_DELIMITERS = 0x0A;
 
 // Compression delimiters
 static char TERMINAL_DELIMITER = 0x24;
@@ -37,6 +39,7 @@ static char NONTERMINAL_DELIMITER = 0x23;
 // Command-line flags
 bool verbose = false;
 bool timing = false;
+bool finished = false;
 
 // Return info about a dictionary match
 typedef struct {
@@ -80,13 +83,34 @@ Lz_match get_longest_match() {
 	return best_match;
 }
 
+void readNextToken() {
+	string s;
+	getline(cin, s, delim);
+	size_t prev=0, next=0;
+	while (prev < s.length() && (next = s.find_first_of(STRING_TOKEN_DELIMITERS, prev)) != std::string::npos) {
+		if (next-prev != 0) {
+			wordqueue.put(s.substr(prev, next-prev));
+		}
+		prev = next+1;
+	}
+	if (prev < s.size()) {
+		wordqueue.put(s.substr(prev));
+	}
+}
+
 /**
 * Get the next space-delimited string from stdin
 */
 string getNextString() {
 	string s;
-	getline(cin, s, delim);
-	return s;
+	if (!wordqueue.is_empty()) {
+		s = wordqueue.pop();
+		return s;
+	} else {
+		readNextToken();
+		s = wordqueue.pop();
+		return s;
+	}
 }
 
 /**
@@ -94,14 +118,14 @@ string getNextString() {
 * @param steps - The number of strings to process
 */
 void advance(int steps) {
-	int i;
+	int i=0,j;
 	string s;
-	for (i=0; i<steps; i++) {
+	for(i=0; i<steps; i++) {
 		dict_circ_buffer.put(lookahead_circ_buffer.peek()); //Add the matched word to our dictionary
-		if (!cin.eof() || !punctuation.empty()) {
+		if (!cin.eof()) {
 			s = getNextString();
 			lookahead_circ_buffer.put(s); // Read the next string and add it to the lookahead buffer
-		} else {
+		} else { 
 			lookahead_circ_buffer.pop(); // If finished reading file, just remove the lookahead buffer tail
 		}
 	}
@@ -111,7 +135,7 @@ void advance(int steps) {
 * Main LZ-77 compression routine
 */
 void compress() {
-	int i;
+	int i=0, j;
 	int steps;
 	vector<char> data;
 	Lz_match current_match;
@@ -119,9 +143,9 @@ void compress() {
 	// Cheat and assume the input is at least LOOKAHEAD_BUFFER_LENGTH characters long
 	// Populate the lookahead buffer
 	string s;
-	for (i = 0; i<LOOKAHEAD_BUFFER_LENGTH; i++) {
+	for (i=0; i<LOOKAHEAD_BUFFER_LENGTH; i++) {
 		s = getNextString();
-		lookahead_circ_buffer.put(s);
+		lookahead_circ_buffer.put(s); // Read the next string and add it to the lookahead buffer
 	}
 
 	// now that the lookahead buffer is populated, iterate through the rest of the data
