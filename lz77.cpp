@@ -19,22 +19,22 @@ using namespace std;
 
 // Buffer lengths
 static int WINDOW_LENGTH = 4095;
-static int LOOKAHEAD_BUFFER_LENGTH = 30;
+static int LOOKAHEAD_BUFFER_LENGTH = 15;
 
 //Circular buffers
 CircBuffer dict_circ_buffer(WINDOW_LENGTH); //Stores 4095 most recently read words
 CircBuffer lookahead_circ_buffer(LOOKAHEAD_BUFFER_LENGTH); //Reads ahead 15 words
 
-deque<string> punctuation;
-CircBuffer wordqueue(20);
+//deque<string> punctuation;
+//CircBuffer wordqueue(20);
 
 // Split on spaces
-char delim = 0x20;
-char STRING_TOKEN_DELIMITERS = 0x0A;
+//char delim = 0x20;
+//char STRING_TOKEN_DELIMITERS = 0x0A;
 
 // Compression delimiters
-static char TERMINAL_DELIMITER = 0x24;
-static char NONTERMINAL_DELIMITER = 0x23;
+static char TERMINAL_DELIMITER = 0xB1;
+static char NONTERMINAL_DELIMITER = 0xB2;
 
 // Command-line flags
 bool verbose = false;
@@ -49,13 +49,13 @@ typedef struct {
 } Lz_match;
 
 /**
-* Find and return the maximum-length array of strings in the lookahead buffer that has a match in the dictionary buffer
+* Find and return the maximum-length array of characters in the lookahead buffer that has a match in the dictionary buffer
 */
 Lz_match get_longest_match() {
 	
+	Lz_match empty_match = {0,0,0};
 	if (dict_circ_buffer.is_empty()) {
-		Lz_match retval = {0,0,0};
-		return retval;
+		return empty_match;
 	}
 
 	int is_match = 0;
@@ -69,7 +69,7 @@ Lz_match get_longest_match() {
 	// Return longest matched sequence
 	for (i=0; i<dict_circ_buffer.size(); i++) {
 		local_match_length = 0;
-		while (local_match_length <= lookahead_circ_buffer.size() && dict_circ_buffer.get(i + local_match_length).compare(lookahead_circ_buffer.get(local_match_length)) == 0) { //kind of hacky; circ buff handles the modulus
+		while (local_match_length < LOOKAHEAD_BUFFER_LENGTH && dict_circ_buffer.get(i + local_match_length) == (lookahead_circ_buffer.get(local_match_length))) { //kind of hacky; circ buff handles the modulus
 			if (is_match == 0) is_match = 1;
 			local_match_length++;
 		}
@@ -79,39 +79,47 @@ Lz_match get_longest_match() {
 		}
 	}
 
+	if (longest_match_length <= 1) return empty_match;
+
 	Lz_match best_match = {is_match, dict_circ_buffer.size() - longest_match_pos, longest_match_length};
 	return best_match;
 }
 
+/*
 void readNextToken() {
-	string s;
-	getline(cin, s, delim);
-	size_t prev=0, next=0;
-	while (prev < s.length() && (next = s.find_first_of(STRING_TOKEN_DELIMITERS, prev)) != std::string::npos) {
-		if (next-prev != 0) {
-			wordqueue.put(s.substr(prev, next-prev));
-		}
-		prev = next+1;
-	}
-	if (prev < s.size()) {
-		wordqueue.put(s.substr(prev));
+	char c;
+	if ((c = getchar()) != eof) {
+
 	}
 }
+*/
 
 /**
 * Get the next space-delimited string from stdin
 */
-string getNextString() {
-	string s;
+/*
+char getNextString() {
+	if (verbose) {
+		printf("Getting next character: ");
+	}
+	char c;
+
 	if (!wordqueue.is_empty()) {
 		s = wordqueue.pop();
+		if (verbose) {
+			printf("(From stored queue): %s\n",s.c_str());
+		}
 		return s;
 	} else {
 		readNextToken();
 		s = wordqueue.pop();
+		if (verbose) {
+			printf("%s\n",s.c_str());
+		}
 		return s;
 	}
 }
+*/
 
 /**
 * Process the next multiple strings in the text
@@ -119,13 +127,15 @@ string getNextString() {
 */
 void advance(int steps) {
 	int i=0,j;
-	string s;
+	char c;
 	for(i=0; i<steps; i++) {
 		dict_circ_buffer.put(lookahead_circ_buffer.peek()); //Add the matched word to our dictionary
-		if (!cin.eof()) {
-			s = getNextString();
-			lookahead_circ_buffer.put(s); // Read the next string and add it to the lookahead buffer
+		//if (!cin.eof()) {
+		//	c = getchar();
+		if ((c = getchar()) != EOF) {
+			lookahead_circ_buffer.put(c); // Read the next string and add it to the lookahead buffer
 		} else { 
+			if (verbose) printf("Popping!\n");
 			lookahead_circ_buffer.pop(); // If finished reading file, just remove the lookahead buffer tail
 		}
 	}
@@ -142,10 +152,10 @@ void compress() {
 
 	// Cheat and assume the input is at least LOOKAHEAD_BUFFER_LENGTH characters long
 	// Populate the lookahead buffer
-	string s;
+	char c;
 	for (i=0; i<LOOKAHEAD_BUFFER_LENGTH; i++) {
-		s = getNextString();
-		lookahead_circ_buffer.put(s); // Read the next string and add it to the lookahead buffer
+		c = getchar();
+		lookahead_circ_buffer.put(c); // Read the next character and add it to the lookahead buffer
 	}
 
 	// now that the lookahead buffer is populated, iterate through the rest of the data
@@ -158,7 +168,7 @@ void compress() {
 				printf("(1,%i,%i): ", current_match.position, current_match.length);
 				int j;
 				for (j=0; j<current_match.length; j++) {
-					printf("%s-", lookahead_circ_buffer.get(j).c_str());
+					printf("%c-", lookahead_circ_buffer.get(j));
 				}
 				printf("\n");
 			}
@@ -180,18 +190,18 @@ void compress() {
 		} else {
 			// Debug information
 			if (verbose) {
-				printf("(0,%s)\n", lookahead_circ_buffer.peek().c_str());
+				printf("(0,%c)\n", lookahead_circ_buffer.peek());
 			}
 			steps = 1; // We want to read ahead one position
 
 			// Print data: terminal delimiter...
 			data.push_back(TERMINAL_DELIMITER);
-
+			data.push_back(lookahead_circ_buffer.peek());
 			// And all characters in the terminal string
-			string s = lookahead_circ_buffer.peek();
-			for (string::iterator it = s.begin(); it != s.end(); ++it) {
-				data.push_back(*it);
-			}
+			//string s = lookahead_circ_buffer.peek();
+			//for (string::iterator it = s.begin(); it != s.end(); ++it) {
+			//	data.push_back(*it);
+			//}
 		}
 		advance(steps); //Set the number of words for the lookahead buffer to read ahead
 	}

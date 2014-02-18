@@ -8,12 +8,12 @@
 using namespace std;
 
 struct Dictionary_Pair {
-	int prefix_index;
-	string literal;
+	unsigned int prefix_index;
+	char literal;
 };
 
 deque<Dictionary_Pair> dictionary;
-vector<string> data;
+vector<char> data;
 bool verbose = false;
 
 void process_index(int index) {
@@ -26,46 +26,44 @@ void process_index(int index) {
 		Dictionary_Pair pair = dictionary.at(index);
 		process_index(pair.prefix_index);
 		data.push_back(pair.literal);
+		printf("%c", pair.literal);
 	}
 }
 
-void process_pair(int index, string literal) {
+void process_pair(int index, char literal) {
 	if (index > dictionary.size()) {
 		printf("Index out of bounds.");
 		return;
 	}
 	process_index(index);
 	data.push_back(literal);
+	if (verbose) printf("%c", literal);
 	Dictionary_Pair current_pair = {index, literal};
 	dictionary.push_back(current_pair);
 }
 
 void decompress() {
 	// Dictionary(0) is empty
-	Dictionary_Pair root_pair = {0, ""};
+	Dictionary_Pair root_pair = {0, 0x00};
 	dictionary.push_back(root_pair);
 
-	// Read cin into a string
-	string s;
-	cin >> s;
-
-	// Iterate once for each (index, literal) pair.  prev keeps track of the current index in string s
-	int prev = 0;
-	while (prev < s.length()) {
-		string literal;
-		int index = (((int) s.at(prev)) << 16) + (((int) s.at(prev+1)) << 8) + ((int) s.at(prev+2)); //Re-create int.  Endianness makes this tough to do cleanly.
-		char length = s.at(prev+3);
-		if (length > 0) literal = s.substr(prev+4, length);
-		else literal = "";
-		if (verbose) printf("(%i,%s)\n", index, literal.c_str());
+	char c, literal;
+	unsigned int i1, i2, i3, index;
+	while ((c = getchar()) != EOF) {
+		i1 = (unsigned int) c;
+		i2 = (unsigned int) getchar();
+		i3 = (unsigned int) getchar();
+		index = ((i1 << 16) & 0x00ff0000) + ((i2 << 8) & 0x0000ff00) + i3;
+		literal = getchar();
+		if (verbose) printf("(i1 = %u, i2 = %u, i3 = %u) -> %u\n", i1, i2, i3, index);
 		process_pair(index, literal);
-		prev += (length + 4); //step forward to the start of the next pair
+		if (verbose) printf ("---(%i,%c)\n", index, literal);
 	}
 
 	// Print the result
 	int i;
 	for (i=0; i<data.size(); i++) {
-		printf("%s ", data.at(i).c_str());
+		printf("%c", data.at(i));
 	}
 	printf("\n");
 }

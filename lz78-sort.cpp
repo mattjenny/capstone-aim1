@@ -12,26 +12,20 @@ using namespace std;
 
 struct Dictionary_Pair {
 	unsigned int prefix_index;
-	string literal;
+	char literal;
 };
 
 deque<Dictionary_Pair> dictionary;
-vector<string> data;
+vector<char> data;
 bool verbose = false;
-unordered_set<string> unique_lit;
-list<string> lit;
-unordered_map<string, unsigned int> indices;
-string text = "";
+unordered_set<char> unique_lit;
+list<char> lit;
+unordered_map<char, unsigned int> indices;
 unsigned int pair_count = 0;
 
-bool compare_ignore_case(string first, string second) {
-	unsigned int i=0;
-	while (i<first.length() && i<second.length()) {
-		if (tolower(first[i]) < tolower(second[i])) return true;
-		if (tolower(first[i]) > tolower(second[i])) return false;
-		i++;
-	}
-	return (first.length() < second.length());
+bool compare_ignore_case(char first, char second) {
+	if (tolower(first) <= tolower(second)) return true;
+	else return false;
 }
 
 void process_index(int index) {
@@ -47,7 +41,7 @@ void process_index(int index) {
 	}
 }
 
-void process_pair(int index, string literal) {
+void process_pair(int index, char literal) {
 	pair_count++;
 	if (index > dictionary.size()) {
 		printf("Index out of bounds.");
@@ -59,7 +53,21 @@ void process_pair(int index, string literal) {
 }
 
 void preprocess() {
-	int prev = 0;
+
+	char c, literal;
+	unsigned int i1, i2, i3, index;
+	while ((c = getchar()) != EOF) {
+		i1 = (unsigned int) c;
+		i2 = (unsigned int) getchar();
+		i3 = (unsigned int) getchar();
+		index = ((i1 << 16) & 0x00ff0000) + ((i2 << 8) & 0x0000ff00) + i3;
+		literal = getchar();
+		if (verbose) printf("(i1 = %u, i2 = %u, i3 = %u) -> %u\n", i1, i2, i3, index);
+		process_pair(index, literal);
+		if (verbose) printf ("---(%i,%c)\n", index, literal);
+	}
+
+	/*
 	while (prev < text.length()) {
 		string literal;
 		int index = (((int) text.at(prev)) << 16) + (((int) text.at(prev+1)) << 8) + ((int) text.at(prev+2)); //Re-create int.  Endianness makes this tough to do cleanly.
@@ -69,16 +77,17 @@ void preprocess() {
 		process_pair(index, literal);
 		prev += (length + 4); //step forward to the start of the next pair
 	}
+	*/
 
-	for (unordered_set<string>::iterator set_iterator = unique_lit.begin(); set_iterator != unique_lit.end(); ++set_iterator) {
+	for (unordered_set<char>::iterator set_iterator = unique_lit.begin(); set_iterator != unique_lit.end(); ++set_iterator) {
 		lit.push_back(*set_iterator);
 	}
 
 	lit.sort(compare_ignore_case);
-	unsigned int c = 0;
-	for (list<string>::iterator it = lit.begin(); it != lit.end(); ++it) {
-		indices.insert(make_pair<string, unsigned int>(*it, c));
-		c++;
+	unsigned int count = 0;
+	for (list<char>::iterator it = lit.begin(); it != lit.end(); ++it) {
+		indices.insert(make_pair<char, unsigned int>(*it, count));
+		count++;
 	}
 }
 
@@ -118,8 +127,8 @@ void sort() {
 	//Print the results
 	printf("RESULTS:\n");
 	i = 0;
-	for (list<string>::iterator it = lit.begin(); it != lit.end(); ++it) {
-		printf("(%s,%u) ", it->c_str(), sum_vector[i]);
+	for (list<char>::iterator it = lit.begin(); it != lit.end(); ++it) {
+		printf("(%c,%u)\n", *it, sum_vector[i]);
 		i++;
 	}
 }
@@ -128,9 +137,6 @@ int main(int argc, char** argv) {
 	if (argc > 1 && strcmp("-v", argv[1]) == 0) {
 		verbose = true;
 	}
-	// Read cin into a string
-	istreambuf_iterator<char> eos;
-	text = string(istreambuf_iterator<char> (cin), eos);
 
 	preprocess();
 	sort();

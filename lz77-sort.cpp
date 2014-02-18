@@ -16,8 +16,8 @@ using namespace std;
 
 static int WINDOW_LENGTH = 4095;
 static int LOOKAHEAD_BUFFER_LENGTH = 15;
-static char TERMINAL_DELIMITER = 0x24;
-static char NONTERMINAL_DELIMITER = 0x23;
+static char TERMINAL_DELIMITER = 0xB1;
+static char NONTERMINAL_DELIMITER = 0xB2;
 
 char c;
 char c1;
@@ -26,27 +26,22 @@ char delim[2] = {TERMINAL_DELIMITER, NONTERMINAL_DELIMITER};
 bool verbose = false;
 bool timing = false;
 CircBuffer dict(WINDOW_LENGTH);
-list<string> lit;
-unordered_map<string, unsigned int> counts;
+list<char> lit;
+unordered_map<char, unsigned int> counts;
 
-bool compare_ignore_case(string first, string second) {
-	unsigned int i=0;
-	while (i<first.length() && i<second.length()) {
-		if (tolower(first[i]) < tolower(second[i])) return true;
-		if (tolower(first[i]) > tolower(second[i])) return false;
-		i++;
-	}
-	return (first.length() < second.length());
+bool compare_ignore_case(char first, char second) {
+	if (tolower(first) <= tolower(second)) return true;
+	else return false;
 }
 
 /*
 * Update dictionary and counts for a given terminal read
 */
-void process_terminal(string terminal) {
-	if (verbose) printf("(0,%s):  %s\n", terminal.c_str(), terminal.c_str());
+void process_terminal(char terminal) {
+	if (verbose) printf("(0,%c):  %c\n", terminal, terminal);
 	dict.put(terminal);
 	if (counts.count(terminal) == 0) {
-		counts.insert(make_pair<string, unsigned int>(terminal, 0));
+		counts.insert(make_pair<char, unsigned int>(terminal, 0));
 	} else {
 		counts.at(terminal)++;
 	}
@@ -59,13 +54,13 @@ void process_terminal(string terminal) {
 void process_nonterminal(int offset, char length) {
 	if (verbose) printf("(1,%i,%i):  ",offset, length);
 	int i;
-	string* decoded_str = new string[length];
+	char* decoded_str = new char[length];
 	int index = dict.size() - offset;
 	dict.get(index, decoded_str, length); //get the data encoded by the pointer
 	dict.put(decoded_str, length); //store this data in the dictionary buffer
 	for (i=0; i<length; i++) {
 		counts.at(decoded_str[i])++; 
-		if (verbose) printf("%s-", decoded_str[i].c_str());
+		if (verbose) printf("%c-", decoded_str[i]);
 	}
 	if (verbose) printf("\n");
 	delete [] decoded_str;
@@ -75,6 +70,7 @@ void process_nonterminal(int offset, char length) {
 * Main sorting routine
 */
 void lz77_sort() {
+	/*
 	//unordered_set<string> lit_set; // Set of all unique words
 	string line; // String into which we'll read all of cin.  I'm sure there's a better way to do this
 	char current_delimiter;
@@ -102,9 +98,25 @@ void lz77_sort() {
 		current_delimiter = line.at(pos);
 		prev = pos+1;
 	}
+	*/
+
+	int offset;
+	char c, terminal, n1, n2, length;
+	while ((c = getchar()) != EOF) {
+		if (c == TERMINAL_DELIMITER) {
+			terminal = getchar();
+			process_terminal(terminal);
+		} else if (c == NONTERMINAL_DELIMITER) {
+			n1 = getchar();
+			n2 = getchar();
+			offset = ((n1 & 0x000000ff) << 4) + ((n2 & 0x000000f0) >> 4); //Bitwise manipulations to get offset
+			length = (n2 & 0x0f); // Bitwise manipulations to get length
+			process_nonterminal(offset, length);
+		}
+	}
 
 	// Now, copy the elements of the set to a list
-	for (unordered_map<string, unsigned int>::iterator it = counts.begin(); it != counts.end(); ++it) {
+	for (unordered_map<char, unsigned int>::iterator it = counts.begin(); it != counts.end(); ++it) {
 		lit.push_back(it->first);
 	}
 	// And sort the list
@@ -113,9 +125,9 @@ void lz77_sort() {
 	// Print results
 	printf("\nRESULTS:\n");
 	int k;
-	for(list<string>::iterator lit_it = lit.begin(); lit_it != lit.end(); ++lit_it) {
-		printf("(%s,%u) \n",(*lit_it).c_str(),counts.at(*lit_it));
-		string charbytes = *lit_it;
+	for(list<char>::iterator lit_it = lit.begin(); lit_it != lit.end(); ++lit_it) {
+		printf("(%c,%u) \n",(*lit_it),counts.at(*lit_it));
+		//char charbytes = *lit_it;
 	}
 	printf("\n");
 }

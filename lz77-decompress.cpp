@@ -9,8 +9,8 @@ using namespace std;
 
 static int WINDOW_LENGTH = 4095;
 static int LOOKAHEAD_BUFFER_LENGTH = 15;
-static char TERMINAL_DELIMITER = 0x24;
-static char NONTERMINAL_DELIMITER = 0x23;
+static char TERMINAL_DELIMITER = 0xB1;
+static char NONTERMINAL_DELIMITER = 0xB2;
 
 char c;
 char c1;
@@ -18,26 +18,26 @@ char c2;
 char delim[2] = {TERMINAL_DELIMITER, NONTERMINAL_DELIMITER};
 bool verbose = false;
 CircBuffer dict(WINDOW_LENGTH);
-std::vector<string> data;
+std::vector<char> data;
 
-// Read a terminal string and add it to the decompressed data
-void process_terminal(string terminal) {
-	if (verbose) printf("(0,%s):  %s\n", terminal.c_str(), terminal.c_str());
+// Read a terminal character and add it to the decompressed data
+void process_terminal(char terminal) {
+	if (verbose) printf("(0,%c):  %c\n", terminal, terminal);
 	data.push_back(terminal);
 	dict.put(terminal); // Add to lookback dictionary
 }
 
-// Look up the referenced string(s) in the dictionary
+// Look up the referenced character(s) in the dictionary
 void process_nonterminal(int offset, char length) {
 	if (verbose) printf("(1,%i,%i):  ",offset, length);
 	int i;
-	string* decoded_str = new string[length]; // Make space for the new string(s)
+	char* decoded_str = new char[length]; // Make space for the new string(s)
 	int index = dict.size() - offset;
 	dict.get(index, decoded_str, length); //get the data encoded by the pointer
 	dict.put(decoded_str, length); //store this data in the dictionary buffer
 	for (i=0; i<length; i++) {
 		data.push_back(decoded_str[i]); // Store string(s)
-		if (verbose) printf("%s-", decoded_str[i].c_str());
+		if (verbose) printf("%c-", decoded_str[i]);
 	}
 	if (verbose) printf("\n");
 	delete [] decoded_str;
@@ -45,10 +45,10 @@ void process_nonterminal(int offset, char length) {
 
 // Main decompression routine
 void decompress() {
+	/*
 	string line; // String to read cin into
 	char current_delimiter; // Used to point to the beginning of the current terminal or nonterminal
 	istreambuf_iterator<char> eos; // Iterator used to read cin into a string
-
 	line = string(istreambuf_iterator<char> (cin), eos); // Read cin into a string.  There's a more efficient way to do this I'm sure...
 	current_delimiter = line.at(0); //Start at the beginning
 	size_t prev = 1, pos; //scan forward from prev to find next delimiter symbol
@@ -71,11 +71,26 @@ void decompress() {
 		current_delimiter = line.at(pos); 
 		prev = pos+1;
 	}
+	*/
+	int offset;
+	char c, terminal, n1, n2, length;
+	while ((c = getchar()) != EOF) {
+		if (c == TERMINAL_DELIMITER) {
+			terminal = getchar();
+			process_terminal(terminal);
+		} else if (c == NONTERMINAL_DELIMITER) {
+			n1 = getchar();
+			n2 = getchar();
+			offset = ((n1 & 0x000000ff) << 4) + ((n2 & 0x000000f0) >> 4); //Bitwise manipulations to get offset
+			length = (n2 & 0x0f); // Bitwise manipulations to get length
+			process_nonterminal(offset, length);
+		}
+	}
 
 	// Print decompressed data
 	int i;
 	for (i=0; i<data.size(); i++) {
-		printf("%s ", data.at(i).c_str());
+		printf("%c", data.at(i));
 	}
 	printf("\n");
 }
